@@ -1,0 +1,169 @@
+\documentclass[11pt,a4paper]{book} 
+
+
+
+% used to put text into a nice box
+\usepackage{tcolorbox}
+
+
+% allow titlecap 
+\usepackage{titlecaps}
+
+
+
+
+\usepackage{calc} 
+
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
+
+\usepackage[ngerman]{babel}
+
+\usepackage{colortbl}
+\usepackage{tabu}
+\usepackage{longtable}
+
+% wrap images
+\usepackage{wrapfig}
+\usepackage{graphicx}
+\usepackage[export]{adjustbox}
+
+% setup roboto light font
+\usepackage[sfdefault,thin]{roboto}
+%\usepackage{roboto-mono}
+
+
+
+
+%\usepackage[default,osfigures,scale=0.95]{opensans}
+
+\usepackage[hidelinks]{hyperref}
+
+
+
+\usetikzlibrary{calc}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shapes,arrows,positioning}
+
+
+
+\newcommand{\wdy}{worldiety}
+
+\definecolor{wdygreen}{rgb}{0.1, 0.54, 0.19}
+
+
+% configure our caption texts
+\usepackage{sectsty}
+\chapterfont{\mdseries\color{wdygreen}}  
+\sectionfont{\mdseries\color{wdygreen}}  
+\subsectionfont{\mdseries\color{wdygreen}}  
+
+
+% design the index/table of contents design
+\usepackage{tocloft}
+\renewcommand{\cfttoctitlefont}{\huge\mdseries\color{wdygreen}}
+\renewcommand{\cftchappagefont}{\color{wdygreen}}
+\renewcommand{\cftchapfont}{\mdseries}
+\renewcommand\cftchapdotsep{\cftdotsep}
+\renewcommand\cftchapleader{\color{wdygreen}\cftdotfill{\cftchapdotsep}}
+\renewcommand\cftsecleader{\color{wdygreen}\cftdotfill{\cftchapdotsep}}
+\renewcommand{\cftsecpagefont}{\color{wdygreen}}
+\renewcommand\cftsubsecleader{\color{wdygreen}\cftdotfill{\cftchapdotsep}}
+\renewcommand{\cftsubsecpagefont}{\color{wdygreen}}
+
+% remove redundant chapter captions, titleformat overloads \chapterfont again
+\usepackage{titlesec}
+\titleformat{\chapter}[display]{\mdseries\color{wdygreen}}{}{0pt}{\huge}
+
+% disable paragraph indent
+\setlength{\parindent}{0pt} 
+
+
+\begin{document} 
+
+
+
+{{define "titlepage"}}
+\begin{titlepage}
+    \begin{tikzpicture}[remember picture,overlay,inner sep=0,outer sep=0]
+
+   % background image
+    \node[draw] at (current page.center) {\includegraphics[width=45cm]{teaser.jpg}};
+
+    % cut of the borders of background image, because printers cannot do full page print and otherwise it looks ugly
+     \fill [white] ([xshift=0cm,yshift=0cm]current page.north west) rectangle ([xshift=1.5cm,yshift=0cm]current page.south west);
+     \fill [white] ([xshift=-1.5cm,yshift=0cm]current page.north east) rectangle ([xshift=0cm,yshift=0cm]current page.south east);
+     \fill [white] ([xshift=0cm,yshift=0cm]current page.north west) rectangle ([xshift=0cm,yshift=-1.5cm]current page.north east);
+     \fill [white] ([xshift=0cm,yshift=1.5cm]current page.south west) rectangle ([xshift=0cm,yshift=0cm]current page.south east);
+
+      \draw[wdygreen,line width=1pt] ([xshift=-1.5cm,yshift=-1.5cm]current page.north east) coordinate (A)--([xshift=1.5cm,yshift=-1.5cm]current page.north west) coordinate(B)--([xshift=1.5cm,yshift=1.5cm]current page.south west) coordinate (C)--([xshift=-1.5cm,yshift=1.5cm]current page.south east) coordinate(D)--cycle;
+ 
+    \fill [wdygreen] ([xshift=1.5cm,yshift=5.5cm]current page.south west) rectangle ([xshift=-1.5cm,yshift=1.5cm]current page.south east);
+
+ 
+	
+  {{ if gt (len .Body) 0 }}
+	    \node[anchor=south, text=white] at ([xshift=0cm,yshift=3.75cm]current page.south) {\huge{ {{escapeLatex (str (index .Body 0))}} }};
+  {{end}}	
+
+   {{ if gt (len .Body) 1 }}
+	    \node[anchor=south, text=white] at ([xshift=0cm,yshift=2.75cm]current page.south) {\huge{ {{escapeLatex (str (index .Body 1))}} }};
+  {{end}}	
+
+
+    \node[anchor=south, text=white] at ([xshift=0cm,yshift=1.75cm]current page.south) {\small{\today}};
+
+    \end{tikzpicture}
+
+ \end{titlepage}
+{{end}}
+
+
+{{define "rendernode" -}}
+ {{range .Body -}}
+	{{ if isType . "text" -}}
+		{{escapeLatex .Value -}}
+	{{- end -}}
+	{{ if isType . "chapter" -}}
+		{{ if eq .Level 0 -}}
+			\chapter{ {{escapeLatex .Title -}} }
+		{{- end -}}
+		{{ if eq .Level 1 -}}
+			\section{ {{escapeLatex .Title -}} }
+		{{- end -}}
+		{{ if eq .Level 2 -}}
+			\subsection{ {{escapeLatex .Title -}} }
+		{{- end -}}
+		{{ if eq .Level 3 -}}
+			\subsubsection{ {{escapeLatex .Title -}} }
+		{{- end }}
+		{{template "rendernode" . }}
+	{{- end -}}
+	{{ if isType . "toc" -}}
+		\tableofcontents
+	{{- end -}}
+	{{ if isType . "titlepage" -}}
+		{{template "titlepage" . -}}
+	{{- end -}}
+	{{ if isType . "newline"}}
+		~\newline
+	{{end -}}
+	{{ if isType . "italic" -}}
+		\textit{ {{- template "rendernode" . -}} }
+	{{- end -}}
+	{{ if isType . "bold" -}}
+		\textbf{ {{- template "rendernode" .  -}} }
+	{{- end -}}
+	{{ if isType . "underline" -}}
+		\underline{ {{- template "rendernode" . -}} }
+	{{- end -}}
+ {{- end -}}
+{{- end -}}
+
+
+{{template "rendernode" . }}
+
+
+
+\end{document}
